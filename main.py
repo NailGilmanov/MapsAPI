@@ -3,12 +3,8 @@ import pygame as pg
 import sys
 import os
 
-W, H = 600, 450
-Z = 15
-place = 'Казань'
 
-
-def param_func(toponym, z):
+def start_coordinates(toponym):
     geocoder_api_server = "http://geocode-maps.yandex.ru/1.x/"
 
     geocoder_params = {
@@ -30,19 +26,22 @@ def param_func(toponym, z):
     # Координаты центра топонима:
     toponym_coodrinates = toponym["Point"]["pos"]
     # Долгота и широта:
-    toponym_longitude, toponym_lattitude = toponym_coodrinates.split(" ")
+    return toponym_coodrinates.split(" ")
 
+
+def param_func(x, y, z):
     # Собираем параметры для запроса к StaticMapsAPI:
     return {
-        "ll": ",".join([toponym_longitude, toponym_lattitude]),
+        "ll": ",".join([x, y]),
         "z": f'{z}',
-        "l": "map"
+        "l": "map",
+        "size": "650,450"
     }
 
 
-def render(place, z):
+def render(x, y, z):
     map_api_server = "http://static-maps.yandex.ru/1.x/"
-    response = requests.get(map_api_server, params=param_func(place, str(z)))
+    response = requests.get(map_api_server, params=param_func(x, y, str(z)))
 
     if not response:
         print("Ошибка выполнения запроса:")
@@ -62,7 +61,13 @@ def render(place, z):
     sc.blit(surf, rect)
 
 
-render(place, Z)
+LAT_STEP = 0.008  # Шаги при движении карты по широте и долготе
+LON_STEP = 0.002
+W, H = 650, 450
+Z = 15
+place = 'Казань'
+longitude, lattitude = start_coordinates(place)
+render(longitude, lattitude, Z)
 FPS = 60
 clock = pg.time.Clock()
 
@@ -78,6 +83,15 @@ while 1:
                 Z = min(Z + 1, 19)
             elif i.key == pg.K_PAGEDOWN:
                 Z = max(Z - 1, 0)
-            render(place, Z)
+            elif i.key == pg.K_UP:
+                lattitude = str(float(lattitude) + LON_STEP)
+            elif i.key == pg.K_DOWN:
+                lattitude = str(float(lattitude) - LON_STEP)
+            elif i.key == pg.K_RIGHT:
+                longitude = str(float(longitude) + LAT_STEP)
+            elif i.key == pg.K_LEFT:
+                longitude = str(float(longitude) - LAT_STEP)
+
+            render(longitude, lattitude, Z)
 
     pg.display.update()
