@@ -1,9 +1,14 @@
 import requests
 import pygame as pg
 import sys
+import os
+
+W, H = 600, 450
+Z = 15
+place = 'Казань'
 
 
-def param_func(toponym, delta):
+def param_func(toponym, z):
     geocoder_api_server = "http://geocode-maps.yandex.ru/1.x/"
 
     geocoder_params = {
@@ -30,37 +35,49 @@ def param_func(toponym, delta):
     # Собираем параметры для запроса к StaticMapsAPI:
     return {
         "ll": ",".join([toponym_longitude, toponym_lattitude]),
-        "spn": ",".join([delta, delta]),
+        "z": f'{z}',
         "l": "map"
     }
 
 
-place = 'Казань'
-d = '0.02'
-W, H = 600, 450
-map_api_server = "http://static-maps.yandex.ru/1.x/"
-response = requests.get(map_api_server, params=param_func(place, d))
+def render(place, z):
+    map_api_server = "http://static-maps.yandex.ru/1.x/"
+    response = requests.get(map_api_server, params=param_func(place, str(z)))
 
-if not response:
-    print("Ошибка выполнения запроса:")
-    print(map_api_server)
-    print("Http статус:", response.status_code, "(", response.reason, ")")
-    sys.exit(1)
+    if not response:
+        print("Ошибка выполнения запроса:")
+        print(map_api_server)
+        print("Http статус:", response.status_code, "(", response.reason, ")")
+        sys.exit(1)
 
-pic = "map.png"
-with open(pic, "wb") as file:
-    file.write(response.content)
+    pic = "map.png"
+    with open(pic, "wb") as file:
+        file.write(response.content)
 
-sc = pg.display.set_mode((W, H))
-sc.fill((100, 150, 200))
+    sc = pg.display.set_mode((W, H))
+    sc.fill((100, 150, 200))
 
-surf = pg.image.load(pic)
-rect = surf.get_rect(bottomright=(W, H))
-sc.blit(surf, rect)
+    surf = pg.image.load(pic)
+    rect = surf.get_rect(bottomright=(W, H))
+    sc.blit(surf, rect)
 
-pg.display.update()
+
+render(place, Z)
+FPS = 60
+clock = pg.time.Clock()
 
 while 1:
+    clock.tick(FPS)
+
     for i in pg.event.get():
         if i.type == pg.QUIT:
+            os.remove('map.png')
             sys.exit()
+        elif i.type == pg.KEYDOWN:
+            if i.key == pg.K_UP:
+                Z = min(Z + 1, 19)
+            elif i.key == pg.K_DOWN:
+                Z = max(Z - 1, 0)
+            render(place, Z)
+
+    pg.display.update()
