@@ -74,9 +74,9 @@ while 1:
             os.remove('map.png')
             sys.exit()
         elif i.type == pg.KEYDOWN:
-            if i.key == pg.K_UP:
+            if i.key == pg.K_PAGEUP:
                 Z = min(Z + 1, 19)
-            elif i.key == pg.K_DOWN:
+            elif i.key == pg.K_PAGEDOWN:
                 Z = max(Z - 1, 0)
             render(place, Z)
 
