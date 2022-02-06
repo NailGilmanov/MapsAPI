@@ -3,6 +3,8 @@ import pygame as pg
 import sys
 import os
 
+pg.font.init()
+
 
 def start_coordinates(toponym):
     geocoder_api_server = "http://geocode-maps.yandex.ru/1.x/"
@@ -29,19 +31,19 @@ def start_coordinates(toponym):
     return toponym_coodrinates.split(" ")
 
 
-def param_func(x, y, z):
+def param_func(x, y, z, map_type):
     # Собираем параметры для запроса к StaticMapsAPI:
     return {
         "ll": ",".join([x, y]),
         "z": f'{z}',
-        "l": "map",
+        "l": {map_type},
         "size": "650,450"
     }
 
 
 def render(x, y, z):
     map_api_server = "http://static-maps.yandex.ru/1.x/"
-    response = requests.get(map_api_server, params=param_func(x, y, str(z)))
+    response = requests.get(map_api_server, params=param_func(x, y, str(z), maptype))
 
     if not response:
         print("Ошибка выполнения запроса:")
@@ -54,16 +56,37 @@ def render(x, y, z):
         file.write(response.content)
 
     sc = pg.display.set_mode((W, H))
-    sc.fill((100, 150, 200))
+    sc.fill((120, 170, 200))
 
     surf = pg.image.load(pic)
     rect = surf.get_rect(bottomright=(W, H))
+
+    f1 = pg.font.Font(None, 36)
+    text1 = f1.render('Yandex.Maps', True,
+                      (0, 0, 0))
+
+    f2 = pg.font.SysFont('serif', 48)
+    text2 = f2.render("World Мир", False,
+                      (0, 0, 0))
+
+    f3 = pg.font.SysFont(None, 32)
+    text3 = f3.render('"L" - переключить', True,
+                      (0, 0, 0))
+    text4 = f3.render('режим карты.', True,
+                      (0, 0, 0))
+
+    sc.blit(text1, (10, 50))
+    sc.blit(text2, (10, 100))
+    sc.blit(text3, (10, 400))
+    sc.blit(text4, (13, 423))
+
     sc.blit(surf, rect)
 
 
+maptype = 'map'
 LAT_STEP = 0.008  # Шаги при движении карты по широте и долготе
 LON_STEP = 0.002
-W, H = 650, 450
+W, H = 900, 450
 Z = 15
 place = 'Казань'
 longitude, lattitude = start_coordinates(place)
@@ -91,6 +114,13 @@ while 1:
                 longitude = str(float(longitude) + LAT_STEP)
             elif i.key == pg.K_LEFT:
                 longitude = str(float(longitude) - LAT_STEP)
+            elif i.key == pg.K_l:
+                if maptype == 'map':
+                    maptype = 'sat'
+                elif maptype == 'sat':
+                    maptype = 'sat,skl'
+                else:
+                    maptype = 'map'
 
             render(longitude, lattitude, Z)
 
